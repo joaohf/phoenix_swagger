@@ -37,6 +37,75 @@ defmodule PhoenixSwagger.JsonApi do
   require PhoenixSwagger
 
   @doc """
+  Defines a schema for a JSON-API error, without the enclosing top-level document.
+  """
+  def error() do
+    %Schema {
+      type: :object,
+      description: "Provide additional information about problems encountered while performing an operation",
+      properties: %{
+        id: %Schema{type: :string, description: "A unique identifier for this particular occurrence of the problem"},
+        links: %Schema{type: :object, properties: %{}},
+        status: %Schema{type: :string, description: "The HTTP status code applicable to this problem"},
+        code: %Schema{type: :string, description: "An application-specific error code"},
+        title: %Schema{type: :string, description: "A short, human-readable summary of the problem"},
+        detail: %Schema{type: :string, description: "A human-readable explanation specific to this occurrence of the problem"},
+        source: %Schema {
+          type: :object,
+          description: "An object containing references to the source of the error",
+          properties: %{
+            "pointer": %Schema {
+              type: :string,
+              description: "A JSON Pointer [RFC6901] to the associated entity in the request document"
+            },
+            "parameter": %Schema {
+              type: :string,
+              description: "A string indicating which URI query parameter caused the error"
+            }
+          }
+        },
+        meta: %Schema {
+          type: :object,
+          properties: %{}
+        }
+      }
+    }
+    |> PhoenixSwagger.to_json()
+  end
+
+  @doc """
+  Defines a schema for a top level json-api document with a single primary data resource.
+  The given `resource` should be the name of a JSON-API resource defined with the `resource/1` macro
+  """
+  def single_error(resource) do
+    %Schema {
+      type: :object,
+      description: "A JSON-API document with a single [#{resource}](##{resource |> to_string |> String.downcase}) resource",
+      properties: %{
+        links: %Schema {
+          type:  :object,
+          properties: %{
+            self: %Schema {
+              type:  :string,
+              description:  "the link that generated the current response document."
+            }
+          }
+        },
+        errors: %Schema {
+          "$ref": "#/definitions/#{resource}"
+        },
+        included: %Schema {
+          type: :array,
+          description: "Included resources",
+          items: %Schema{}
+        }
+      },
+      required:  [:errors]
+    }
+    |> PhoenixSwagger.to_json()
+  end
+
+  @doc """
   Defines a schema for a top level json-api document with an array of resources as primary data.
   The given `resource` should be the name of a JSON-API resource defined with the `resource/1` macro
   """
